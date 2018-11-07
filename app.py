@@ -50,6 +50,11 @@ def get_matches(query):
     return matches
 
 
+@app.route('/')
+def index():
+    return redirect('/task/')
+
+
 @app.route('/task/', methods=["GET", "POST"])
 def task():
     user_name = get_user_name()
