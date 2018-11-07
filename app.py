@@ -38,31 +38,48 @@ def increment_field(data, field):
     return data
 
 
+def get_matches(query):
+    match_table = db['zz_enrich_match']
+    matches = list(db.query(query))
+    if matches:
+        match = matches[0]
+        entity_id = match['entity_id']
+        matches = list(match_table.find(entity_id=entity_id))
+    else:
+        matches = []
+    return matches
+
+
 @app.route('/task/', methods=["GET", "POST"])
 def task():
-    match_table = db['zz_enrich_match']
-    entity_table = db['zz_enrich_entity']
-    votes_table = db['zz_enrich_votes']
     user_name = get_user_name()
-    # Get a candidate with less than 2 votes and one that the current user
-    # has not seen yet
-    query = """SELECT m.candidate_id, m.entity_id
+    if request.method == 'GET':
+        # Get a candidate with less than 2 votes and one that the current user
+        # has not seen yet
+        query = """SELECT m.candidate_id, m.entity_id
+                FROM zz_enrich_match m
+                WHERE (m.total_votes IS Null OR m.total_votes < 2)
+                AND NOT EXISTS
+                (SELECT * FROM zz_enrich_votes v
+                WHERE v.user_id = '{0}'
+                AND v.candidate_id = m.candidate_id)
+                LIMIT 1""".format(user_name)
+        matches = get_matches(query)
+        if not matches:
+            # Is there any task that needs a tie-breaker?
+            # Tie-break task shows all potential matches again; as opposed to
+            # only the ones that need tie-breaking 
+            query = """SELECT m.candidate_id, m.entity_id
             FROM zz_enrich_match m
-            WHERE (m.total_votes IS Null OR m.total_votes < 2)
+            WHERE (m.total_votes > 1 AND m.yes == m.no)
             AND NOT EXISTS
             (SELECT * FROM zz_enrich_votes v
             WHERE v.user_id = '{0}'
             AND v.candidate_id = m.candidate_id)
             LIMIT 1""".format(user_name)
-    if request.method == 'GET':
-        matches = list(db.query(query))
-        if matches:
-            match = matches[0]
-            entity_id = match['entity_id']
-            matches = list(match_table.find(entity_id=entity_id))
-        else:
-            matches = []
-        for idx, match in enumerate(matches):
+            matches = get_matches(query)
+        for match in matches:
+            entity_table = db['zz_enrich_entity']
             entity = entity_table.find_one(id=match['candidate_id'])
             if entity:
                 match['properties'] = json.loads(entity['properties'])
