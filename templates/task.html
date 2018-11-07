@@ -29,6 +29,9 @@
     </style>
 </head>
 <body>
+    {% if not matches %}
+    <h1>No tasks to show.</h1>
+    {% else %}
     <div class='entity-name'>
         {{ matches[0]['entity_name'] }}
     </div>
@@ -62,5 +65,6 @@
             </form>
         </div>
     </div>
+    {% endif %}
 </body>
 </html>
