@@ -14,13 +14,16 @@
             background: white;
             width: 100%;
             z-index: 100;
-            text-align: center;
             padding: 10px;
-            font-size: 2em;
+            font-size: 1.2em;
+            height: 300px;
+            max-height: 300px;
+            overflow: scroll;
+            padding-left: 10%;
         }
         .candidates {
             position: relative;
-            top: 80px;
+            top: 300px;
         }
         .candidate {
             padding: 10px;
@@ -33,15 +36,29 @@
     <h1>No tasks to show.</h1>
     {% else %}
     <div class='entity-name'>
-        {{ matches[0]['entity_name'] }}
+        <h1>Company Details</h1>
+        <p>
+            {% for key, val in entity.entity_data.properties.items() %}
+            <b>{{ key | capitalize }}</b> : {{ val | join(' ,') }}<br />
+            {% endfor %}
+            <b>Aliases</b> : {{ matches[0]["aliases"] }}<br />
+            <b>Min Date</b> : {{ matches[0]["min_date"] }}<br />
+            <b>Max Date</b> : {{ matches[0]["max_date"] }}<br />
+            <b>Amount in USD</b> : {{ matches[0]["amount_usd"] }}<br />
+            <b>Transaction Count</b> : {{ matches[0]["tx_count"] }}<br />
+            <b>Accounts</b> : {{ matches[0]["accounts"] }}<br />
+        </p>
     </div>
     <div class='container'>
         <div class='row candidates'>
+            <div class="row">
+                <h1>Possible Matches. Do they match?</h1>
+            </div>
             <form action="" method="POST" class='row'>
                 {% for match in matches %}
-                    <div class='candidate form-group border-top col-sm-3'>
+                    <div class='candidate form-group border-top col-sm-4'>
                         <p>
-                        {% for key, val in match.properties.items() %}
+                        {% for key, val in match.candidate_data.properties.items() %}
                             <b>{{ key | capitalize }}</b> : {{ val | join(' ,') }}<br/>
                         {% endfor %}
                         </p>

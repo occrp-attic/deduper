@@ -13,7 +13,6 @@ db = dataset.connect(DB_URI)
 
 def init():
     match_table = db['zz_enrich_match']
-    entity_table = db['zz_enrich_entity']
     votes_table = db['zz_enrich_votes']
 
     match_table.create_column('total_votes', db.types.integer)
@@ -26,9 +25,10 @@ def init():
     votes_table.create_column('vote', db.types.text)
     db.commit()
 
+init()
 
 def get_user_name():
-    return request.headers.get("KEYCLOAK_USERNAME") or 'xxx'
+    return request.headers.get("KEYCLOAK_USERNAME") or 'anonymous'
 
 
 def increment_field(data, field):
@@ -70,6 +70,7 @@ def task():
                 AND v.candidate_id = m.candidate_id)
                 LIMIT 1""".format(user_name)
         matches = get_matches(query)
+        entity = {}
         if not matches:
             # Is there any task that needs a tie-breaker?
             # Tie-break task shows all potential matches again; as opposed to
@@ -83,13 +84,13 @@ def task():
             AND v.candidate_id = m.candidate_id)
             LIMIT 1""".format(user_name)
             matches = get_matches(query)
-        for match in matches:
-            entity_table = db['zz_enrich_entity']
-            entity = entity_table.find_one(id=match['candidate_id'])
-            if entity:
-                match['properties'] = json.loads(entity['properties'])
+        if matches:
+            for match in matches:
+                match["candidate_data"] = json.loads(match["candidate_data"])
+            entity["entity_data"] = json.loads(matches[0]["entity_data"])
         ctx = {
-            "matches": matches
+            "matches": matches,
+            "entity": entity
         }
         return render_template("task.html", **ctx)
     if request.method == 'POST':
