@@ -1,6 +1,7 @@
 FROM python:3.6-alpine
 
-COPY . /app
+COPY app.py Pipfile Pipfile.lock /app/
+COPY templates /app/templates/
 WORKDIR /app
 
 ENV DATAVAULT_URI 'sqlite:///mydatabase.db'
